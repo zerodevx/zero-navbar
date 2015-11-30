@@ -38,7 +38,7 @@ Use like:
 
 ### Demo
 
-Try [this](https://cdn.rawgit.com/zerodevx/zero-navbar/v0.1.0/demo).
+Try [this](https://cdn.rawgit.com/zerodevx/zero-navbar/v0.1.0/demo/demo.html).
 
 
 ### Published properties
