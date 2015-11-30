@@ -1,0 +1,259 @@
+<!--0.1.0-->
+<!--
+The MIT License (MIT)
+
+Copyright (c) 2015 Jason JC Lee <zerodevx@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+
+<dom-module id="zero-navbar">
+  <template>
+    <style>
+      :host {
+        position: fixed;
+        top: 0;
+        left; 0;
+        width: 100%;
+        height: 50px;
+        background-color: rgba(255,255,255,0.85);
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+      }
+      :host::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+        width: 100%;
+        height: 5px;
+        pointer-events: none;
+        box-shadow: inset 0px 5px 6px -3px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        transition: opacity 400ms;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+      }
+      :host[drop-shadow]::after {
+        opacity: 1;
+      }
+      .flex {
+        @apply(--layout-flex);
+      }
+      .horizontal {
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+      }
+      /*.vertical {
+        @apply(--layout-vertical);
+        @apply(--layout-center);
+        position: absolute;
+        top: 36px;
+        right: 36px;
+        box-shadow: 0 16px 24px 2px rgba(0, 0, 0, 0.14),
+                    0  6px 30px 5px rgba(0, 0, 0, 0.12),
+                    0  8px 10px -5px rgba(0, 0, 0, 0.4);
+        background-color: #fff;
+        padding: 8px;
+        visibility: hidden;
+      }*/
+      .padding-left {
+        width: var(--zero-navbar-left-padding, 12px);
+      }
+      .padding-right {
+        width: var(--zero-navbar-right-padding, 12px);
+      }
+      .btn {
+        height: 30px;
+        width: 30px;
+        background-color: transparent;
+      }
+      .btn:hover {
+        cursor: pointer;
+        background-color: rgba(3,169,244,0.15);
+      }
+    </style>
+
+    <iron-media-query query="(min-width:{{minWidth}})" query-matches="{{_large}}"></iron-media-query>
+
+    <div class="padding-left"></div>
+
+    <content id="left" select=".zero-navbar-left"></content>
+    <div class="flex"></div>
+    <div id="items" class="horizontal">
+      <content select=":not(.zero-navbar-left)"></content>
+    </div>
+
+    <!--<div class="btn" hidden$="{{_large}}" on-tap="_btnTapped"><img src="hamburger.svg"></div>-->
+
+    <div class="padding-right"></div>
+
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: "zero-navbar",
+    properties: {
+
+      /*
+      ** Whether navbar is revealed or not. Acts as both setter and getter.
+      */
+      reveal: { type: Boolean, value: false, notify: true, observer: "_revealChanged" },
+
+      /*
+      ** Show a drop-shadow below the navbar.
+      */
+      shadow: { type: Boolean, value: false },
+
+      /*
+      ** Starts the navbar only after document has been scrolled by distance of
+      ** `offset` in px.
+      */
+      offset: { type: Number, value: 0 },
+
+      /*
+      ** TODO: Min width of viewport to stack items into hamburger menu.
+      ** Defaults to "400px".
+      */
+      minWidth: { type: String, value: "400px" },
+
+      /*
+      ** Duration of navbar slide transition in ms. Set to 0 to disable
+      ** transition totally.
+      */
+      duration: { type: Number, value: 500 },
+
+      /*
+      ** Disables automatic reveal of the navbar when a fast upward scroll is
+      ** detected.
+      */
+      disableAuto: { type: Boolean, value: false, observer: "_disableAutoChanged" },
+
+      /*
+      ** Sensitivity of upward scroll reveal.
+      */
+      sensitivity: { type: Number, value: 100 },
+
+      /*
+      ** Scroll debouncer delay.
+      */
+      debounceDelay: { type: Number, value: 25 },
+
+      /*
+      ** TODO: Set scrollable region to listen to. Defaults to document scroller.
+      */
+      //scrollableRegion: { type: Object, value: function () { return window; } },
+
+      _large: { type: Boolean, observer: "_largeChanged" },
+      _opened: Boolean, //hamburger opened?
+      _scrolling: Boolean,
+      _shadowed: Boolean, //drop-shadow attached?
+      _startY: Number
+    },
+
+    _largeChanged: function (n, o) {
+      /*if (n) {
+        this.$.items.classList.add("horizontal");
+        this.$.items.classList.remove("vertical");
+      } else {
+        this.$.items.classList.add("vertical");
+        this.$.items.classList.remove("horizontal");
+      }*/
+    },
+
+    _btnTapped: function (e) {
+    },
+
+    _disableAutoChanged: function (n, o) {
+      if (!n) {
+        this.async(function () {
+          this.listen(window, "scroll", "_onScroll");
+        });
+      } else {
+        this.unlisten(window, "scroll", "_onScroll");
+      }
+    },
+
+    _revealChanged: function (n, o) {
+      if (o === undefined) return; //squelch first set
+      if (n) {
+        this.style.transition = this.duration ? "transform " + this.duration + "ms ease-out" : "";
+        this.translate3d("0px", "0px", "0px");
+      } else {
+        this.style.transition = this.duration ? "transform " + this.duration + "ms ease-in" : "";
+        this.translate3d("0px", "-" + this.offsetHeight + "px", "0px");
+      }
+    },
+
+    _onScroll: function (e) {
+      if (this.shadow) {
+        if (window.scrollY > this.offset && !this.shadowed) {
+          this.setAttribute("drop-shadow", "");
+          this._shadowed = true;
+        } else if (window.scrollY <= this.offset && this._shadowed) {
+          this.removeAttribute("drop-shadow");
+          this._shadowed = false;
+        }
+      }
+      if (!this._scrolling) {
+        this._scrolling = true;
+        this._startY = window.scrollY;
+        return;
+      }
+      this.debounce("test", function () {
+        var y = window.scrollY;
+        if (y <= this.offset) { //off if scroll pos does not exceed offset
+          this.reveal = false;
+        } else if ((y - this._startY) < -(this.sensitivity)) { //fast scroll up
+          this.reveal = true;
+        } else if ((y - this._startY) > 0) { //scroll down
+          this.reveal = false;
+        }
+        this._scrolling = false;
+      }, this.debounceDelay);
+    },
+
+    /*
+    ** Convenience function to toggle state of navbar reveal.
+    */
+    toggle: function () {
+      this.reveal = !this.reveal;
+    },
+
+    ready: function () {
+      this.style.opacity = 0;
+    },
+    attached: function () {
+      if (!this.reveal || (window.scrollY < this.offset)) {
+        this.translate3d("0px", "-" + this.offsetHeight + "px", "0px");
+      }
+      this.style.opacity = 1;
+    },
+    detached: function () { //book-keeping
+      if (!this.disableAuto) { this.disableAuto; }
+    }
+  });
+</script>
