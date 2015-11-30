@@ -1,4 +1,4 @@
-v0.1.0
+v0.1.1
 
 # `<zero-navbar>`
 
@@ -38,7 +38,7 @@ Use like:
 
 ### Demo
 
-Try [this](https://cdn.rawgit.com/zerodevx/zero-navbar/v0.1.0/demo/demo.html).
+Try [this](https://rawgit.com/zerodevx/zero-navbar/master/demo/demo.html).
 
 
 ### Published properties
